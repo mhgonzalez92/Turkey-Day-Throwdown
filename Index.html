@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Turkey Day Throwdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sports-bracket scoreboard on a holiday tablecloth — round tabs on top, matchup cards grouped by region, results board on its own tab */
+:root{
+  --bg:#FFFCF7; --surface:#FFFFFF; --surface-2:#F7EFE6; --ink:#2A1A1F; --muted:#6E5A5F; --line:#E6D8CC;
+  --accent:#A3123A; --accent-ink:#FFFFFF; --gold:#C98612; --gold-soft:#FBEBC8; --sage:#4F7350; --sage-soft:#E3EEDF;
+  --display:"Alfa Slab One", Rockwell, "Roboto Slab", Georgia, serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --label:"Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1A1215; --surface:#251A1E; --surface-2:#2F2227; --ink:#F6EBE6; --muted:#BFA8AE; --line:#433038;
+  --accent:#FF5C7F; --accent-ink:#22070F; --gold:#F2B544; --gold-soft:#3A2C14; --sage:#8FC18D; --sage-soft:#1F2E20; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1215; --surface:#251A1E; --surface-2:#2F2227; --ink:#F6EBE6; --muted:#BFA8AE; --line:#433038;
+  --accent:#FF5C7F; --accent-ink:#22070F; --gold:#F2B544; --gold-soft:#3A2C14; --sage:#8FC18D; --sage-soft:#1F2E20; color-scheme:dark}
+
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:1100px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:16px;border-bottom:3px double var(--line)}
+.eyebrow{font-family:var(--label);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-size:13px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,6vw,52px);line-height:1;margin:4px 0 6px;text-wrap:balance;color:var(--accent)}
+.sub{color:var(--muted);max-width:60ch;margin:0}
+.progress{min-width:220px;flex:0 1 300px}
+.progress .lbl{display:flex;justify-content:space-between;font-family:var(--label);font-weight:600;font-size:15px;letter-spacing:.04em;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-top:6px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding:12px 0;margin-bottom:8px;scrollbar-width:thin}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tab{flex:0 0 auto;font-family:var(--label);font-weight:700;font-size:16px;letter-spacing:.05em;text-transform:uppercase;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;display:flex;gap:7px;align-items:center}
+.tab .n{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tab.done .n{color:var(--sage)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab[aria-selected="true"] .n{color:var(--bg);opacity:.75}
+.tab.results{margin-left:auto;border-color:var(--gold);color:var(--gold)}
+.tab.results[aria-selected="true"]{background:var(--gold);color:var(--accent-ink);border-color:var(--gold)}
+.tab:focus-visible,.pick:focus-visible,.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+.roundhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin:10px 0 14px}
+.roundhead h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0}
+.roundhead p{margin:0;color:var(--muted);max-width:62ch}
+
+.regions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:22px}
+.region h3{font-family:var(--label);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:17px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.region h3::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--rc)}
+.games{display:grid;gap:12px}
+.game{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;position:relative}
+.game .tag{font-family:var(--label);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 12px 0;display:block}
+.pick{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;width:100%;padding:10px 12px;cursor:pointer;transition:background .15s}
+.pick + .vs + .pick{border-top:none}
+.pick:hover:not([disabled]){background:var(--surface-2)}
+.pick .nm{font-weight:650;font-size:16px;line-height:1.2}
+.pick .ds{grid-column:1;color:var(--muted);font-size:13px;line-height:1.3}
+.pick .cu{grid-column:2;grid-row:1 / span 2;font-family:var(--label);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);background:var(--gold-soft);padding:2px 7px;border-radius:99px;white-space:nowrap}
+.pick.win{background:var(--accent);color:var(--accent-ink)}
+.pick.win .ds{color:var(--accent-ink);opacity:.85}
+.pick.win .cu{background:rgba(255,255,255,.18);color:var(--accent-ink)}
+.pick.lose{opacity:.45}
+.pick[disabled]{cursor:default}
+.pick.tbd .nm{color:var(--muted);font-weight:500;font-style:italic}
+.vs{display:flex;align-items:center;gap:8px;padding:0 12px;font-family:var(--label);font-weight:700;font-size:12px;color:var(--muted);letter-spacing:.12em}
+.vs::before,.vs::after{content:"";flex:1;border-top:1px dashed var(--line)}
+
+.next{display:flex;justify-content:flex-end;margin-top:22px;gap:10px;flex-wrap:wrap}
+.btn{font-family:var(--label);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;background:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+
+.finals{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.champ{margin-top:24px;border:3px solid var(--gold);border-radius:14px;padding:22px;background:var(--gold-soft);display:grid;gap:8px;text-align:center}
+.champ .eyebrow{color:var(--ink)}
+.champ .who{font-family:var(--display);font-size:clamp(28px,6vw,44px);color:var(--accent);line-height:1.05;text-wrap:balance}
+.champ .ff{color:var(--muted)}
+.notice{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface-2);color:var(--ink);font-size:14px}
+.notice.ok{background:var(--sage-soft);color:var(--ink)}
+
+/* results */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px;margin-top:6px}
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.panel h3{font-family:var(--label);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:17px;margin:0 0 4px}
+.panel .hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.row .rk{font-family:var(--label);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .v{font-family:var(--label);font-weight:700;font-variant-numeric:tabular-nums;font-size:16px}
+.row .meter{grid-column:2 / span 2;height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.row .meter i{display:block;height:100%;background:var(--c,var(--accent));border-radius:99px}
+.big{font-family:var(--display);font-size:44px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-style:italic}
+footer{margin-top:40px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+.namebox{display:grid;gap:6px;justify-items:center;margin-top:6px}
+.namebox label{font-family:var(--label);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:14px}
+.namebox input{font:inherit;font-size:16px;padding:9px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);width:min(100%,320px);text-align:center}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">40 dishes · 6 rounds · 1 plate to rule them all</div>
+      <h1>Turkey Day Throwdown</h1>
+      <p class="sub">Pick a winner in every matchup. Look-alike dishes face off first, so canned cranberry has to get past homemade. Winners move on to the Final Four and the championship.</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="lbl"><span>Your picks</span><span id="pcount">0 / 39</span></div>
+      <div class="bar"><i id="pbar"></i></div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Rounds"></nav>
+  <main id="view"></main>
+  <footer>Your picks save in this browser as you go. Lock in your bracket to add it to the Community Results.</footer>
+</div>
+
+<script>
+(function(){
+const REGIONS = [
+  {key:"main", name:"The Main Event", color:"#A3123A", items:{
+    roast:["Oven-Roasted Turkey","Golden skin, carved at the table","Classic"],
+    fried:["Deep-Fried Turkey","Crispy, juicy, done in under an hour","Southern"],
+    smoked:["Smoked Turkey","Low and slow over hickory or apple wood","BBQ"],
+    turducken:["Turducken","Chicken in a duck in a turkey","Louisiana"],
+    tofurky:["Tofurky Roast","The plant-based centerpiece","Vegan"],
+    tamales:["Tamales","Corn masa with fillings, steamed in husks","Mexican"],
+    pasteles:["Pasteles","Plantain-and-root masa wrapped in banana leaf","Puerto Rican"],
+    empanadas:["Empanadas","Golden hand pies with savory filling","Latin American"],
+    ham:["Honey-Glazed Ham","Sweet, sticky, spiral-sliced","Classic"],
+    pernil:["Pernil","Garlicky slow-roasted pork shoulder","Puerto Rican"]},
+    playins:[["roast","fried"],["tamales","pasteles"]],
+    r32:[["P0","smoked"],["turducken","tofurky"],["P1","empanadas"],["ham","pernil"]]},
+  {key:"starch", name:"Starch Madness", color:"#C98612", items:{
+    creamymac:["Creamy Mac & Cheese","Stovetop, saucy, extra cheesy","Classic"],
+    potsalad:["Potato Salad","Creamy, tangy, with egg and paprika","Soul Food"],
+    deviled:["Deviled Eggs","Whipped yolks with a paprika dusting","Southern"],
+    mashed:["Mashed Potatoes & Gravy","Butter, cream, and a gravy crater","Classic"],
+    mofongo:["Mofongo","Mashed fried plantains with garlic","Puerto Rican"],
+    gandules:["Arroz con Gandules","Rice with pigeon peas and sofrito","Puerto Rican"],
+    jollof:["Jollof Rice","Smoky tomato-pepper rice","West African"],
+    dirty:["Dirty Rice","Rice with savory bits and Cajun spice","Creole"],
+    mac:["Baked Mac & Cheese","Cheesy, crusty corners","Soul Food"],
+    pastelon:["Pastelón","Sweet plantain and beef layered with cheese","Puerto Rican"]},
+    playins:[["mac","creamymac"],["gandules","jollof"]],
+    r32:[["P0","pastelon"],["mashed","mofongo"],["P1","dirty"],["potsalad","deviled"]]},
+  {key:"table", name:"Sauce, Bread & Greens", color:"#4F7350", items:{
+    cranfresh:["Homemade Cranberry Sauce","Whole berries simmered with orange","Classic"],
+    crancan:["Canned Cranberry Sauce","The jiggly can-shaped log","Classic"],
+    gravy:["Turkey Gravy","Pan drippings, whisked smooth","Classic"],
+    gbc:["Green Bean Casserole","Creamy beans with crispy onions","Classic"],
+    collards:["Collard Greens with Bacon","Slow-simmered with smoky bacon","Soul Food"],
+    rolls:["Buttery Dinner Rolls","Soft, pull-apart, brushed with butter","Classic"],
+    hawaiian:["Hawaiian Sweet Rolls","Fluffy and slightly sweet","Hawaiian"],
+    cornbread:["Skillet Cornbread","Crisp edges from a cast-iron pan","Southern"],
+    creamcorn:["Creamed Corn","Sweet corn in a silky sauce","Classic"],
+    elote:["Elote","Street corn with mayo, cotija, chile, lime","Mexican"]},
+    playins:[["cranfresh","crancan"],["rolls","hawaiian"]],
+    r32:[["P0","gravy"],["gbc","collards"],["P1","cornbread"],["creamcorn","elote"]]},
+  {key:"sweet", name:"The Sweet Spot", color:"#7A4FA0", items:{
+    sppie:["Sweet Potato Pie","Spiced, silky, and deeply Southern","Soul Food"],
+    yams:["Candied Yams w/ Marshmallows","Brown-sugar sweet potatoes, toasted top","Classic"],
+    pumpkin:["Pumpkin Pie","The original, with whipped cream","Classic"],
+    tresleches:["Tres Leches Cake","Sponge soaked in three milks","Latin American"],
+    cheesecake:["Pumpkin Cheesecake","Creamy, spiced, graham crust","Modern"],
+    apple:["Apple Pie","Flaky lattice and cinnamon apples","Classic"],
+    cobbler:["Peach Cobbler","Bubbling peaches under a biscuit top","Soul Food"],
+    pecan:["Pecan Pie","Gooey, toasty, very sweet","Southern"],
+    nanner:["Banana Pudding","Vanilla wafers, custard, bananas","Southern"],
+    flan:["Flan","Caramel-topped custard","Latin American"]},
+    playins:[["sppie","yams"],["apple","cobbler"]],
+    r32:[["P0","pumpkin"],["tresleches","cheesecake"],["P1","pecan"],["nanner","flan"]]}
+];
+const ITEM = {}; // id -> {name, desc, cuisine, region}
+REGIONS.forEach((r,ri)=>Object.entries(r.items).forEach(([id,v])=>ITEM[id]={id,name:v[0],desc:v[1],cuisine:v[2],region:ri}));
+
+// Build the games. Each game: {id, round, region, a, b} where a/b are either {item} or {from: gameId}
+const ROUNDS = [
+  {key:"play", name:"Play-In", title:"Play-In Round", blurb:"The closest look-alikes go head to head. Only one cranberry sauce survives."},
+  {key:"r32", name:"Round of 32", title:"Round of 32", blurb:"Play-in winners join the field. Similar dishes still face each other."},
+  {key:"s16", name:"Sweet 16", title:"Sweet 16", blurb:"Neighbors in each region collide."},
+  {key:"e8", name:"Elite 8", title:"Elite 8", blurb:"Win here to be crowned region champion and reach the Final Four."},
+  {key:"f4", name:"Final Four", title:"Final Four", blurb:"Your top four dishes. Mains vs. Starches, Table vs. Sweets."},
+  {key:"ch", name:"Championship", title:"Championship", blurb:"One dish takes the whole table."}
+];
+const GAMES = [];
+const G = {};
+function add(g){GAMES.push(g);G[g.id]=g}
+REGIONS.forEach((r,ri)=>{
+  r.playins.forEach((p,i)=>add({id:`p${ri}${i}`,round:0,region:ri,a:{item:p[0]},b:{item:p[1]}}));
+  r.r32.forEach((p,i)=>add({id:`r${ri}${i}`,round:1,region:ri,
+    a:p[0].startsWith("P")?{from:`p${ri}${p[0][1]}`}:{item:p[0]}, b:{item:p[1]}}));
+  add({id:`s${ri}0`,round:2,region:ri,a:{from:`r${ri}0`},b:{from:`r${ri}1`}});
+  add({id:`s${ri}1`,round:2,region:ri,a:{from:`r${ri}2`},b:{from:`r${ri}3`}});
+  add({id:`e${ri}`,round:3,region:ri,a:{from:`s${ri}0`},b:{from:`s${ri}1`}});
+});
+add({id:"f0",round:4,region:null,a:{from:"e0"},b:{from:"e1"},label:"Semifinal 1"});
+add({id:"f1",round:4,region:null,a:{from:"e2"},b:{from:"e3"},label:"Semifinal 2"});
+add({id:"c",round:5,region:null,a:{from:"f0"},b:{from:"f1"},label:"Championship"});
+const TOTAL = GAMES.length; // 39
+
+// State
+const LS = "ttd-picks-v1";
+let picks = {};
+try{ picks = JSON.parse(localStorage.getItem(LS)||"{}")||{} }catch(e){ picks = {} }
+let tab = 0;
+let community=[], saveMsg="", dbState="loading";
+const HAS_GAS = !!(window.google && google.script && google.script.run);
+function lsGet(k){ try{ return localStorage.getItem(k) }catch(e){ return null } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v) }catch(e){} }
+let myId = lsGet("ttd-id");
+if(!myId){ myId = "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); lsSet("ttd-id", myId) }
+let myName = lsGet("ttd-name") || "";
+let submitted = null;
+try{ submitted = JSON.parse(lsGet("ttd-submitted")||"null") }catch(e){ submitted=null }
+
+function slot(s, P){ return s.item ? s.item : (P[s.from]||null) }
+function parts(g, P){ return [slot(g.a,P), slot(g.b,P)] }
+function prune(P){ GAMES.forEach(g=>{ const [x,y]=parts(g,P); if(P[g.id] && P[g.id]!==x && P[g.id]!==y) delete P[g.id]; }) }
+function count(){ return GAMES.filter(g=>picks[g.id]).length }
+function persist(){ try{ localStorage.setItem(LS, JSON.stringify(picks)) }catch(e){} }
+function roundDone(ri){ return GAMES.filter(g=>g.round===ri).every(g=>picks[g.id]) }
+function roundCount(ri){ const gs=GAMES.filter(g=>g.round===ri); return [gs.filter(g=>picks[g.id]).length, gs.length] }
+function same(a,b){ return JSON.stringify(a)===JSON.stringify(b) }
+
+function choose(gid, item){
+  if(picks[gid]===item) return;
+  picks[gid]=item; prune(picks); persist(); saveMsg="";
+  render();
+}
+
+const el=(t,c,txt)=>{const e=document.createElement(t); if(c) e.className=c; if(txt!=null) e.textContent=txt; return e};
+
+function renderTabs(){
+  const nav=document.getElementById("tabs"); nav.textContent="";
+  ROUNDS.forEach((r,i)=>{
+    const [d,t]=roundCount(i);
+    const b=el("button","tab"+(d===t?" done":"")); b.setAttribute("role","tab"); b.setAttribute("aria-selected",tab===i);
+    b.id="tab-"+r.key;
+    b.append(el("span",null,r.name), el("span","n",d===t?"✓":`${d}/${t}`));
+    b.onclick=()=>{tab=i;render();window.scrollTo({top:0})};
+    nav.append(b);
+  });
+  const rb=el("button","tab results"); rb.id="tab-results"; rb.setAttribute("role","tab"); rb.setAttribute("aria-selected",tab===6);
+  rb.append(el("span",null,"Community Results"), el("span","n", community.length? String(community.length):""));
+  rb.onclick=()=>{tab=6;render();fetchResults();window.scrollTo({top:0})};
+  nav.append(rb);
+}
+
+function gameCard(g){
+  const card=el("div","game");
+  if(g.round===0) card.append(el("span","tag","Play-in · winner advances"));
+  if(g.label) card.append(el("span","tag",g.label));
+  const [x,y]=parts(g,picks);
+  [x,y].forEach((it,i)=>{
+    if(i===1) card.append(el("div","vs","VS"));
+    const b=el("button","pick");
+    b.type="button";
+    if(!it){ b.classList.add("tbd"); b.disabled=true;
+      b.append(el("span","nm","Waiting on an earlier pick"));
+    } else {
+      const m=ITEM[it];
+      b.append(el("span","nm",m.name), el("span","ds",m.desc), el("span","cu",m.cuisine));
+      if(picks[g.id]===it) b.classList.add("win"); else if(picks[g.id]) b.classList.add("lose");
+      b.setAttribute("aria-pressed", picks[g.id]===it);
+      if(!x||!y){ b.disabled=true } else b.onclick=()=>choose(g.id,it);
+    }
+    card.append(b);
+  });
+  return card;
+}
+
+function renderRound(ri){
+  const v=document.getElementById("view"); v.textContent="";
+  const r=ROUNDS[ri];
+  const head=el("div","roundhead"); head.append(el("h2",null,r.title), el("p",null,r.blurb)); v.append(head);
+  if(ri<4){
+    const grid=el("div","regions");
+    REGIONS.forEach((reg,rgi)=>{
+      const col=el("section","region"); col.style.setProperty("--rc",reg.color);
+      col.append(el("h3",null,reg.name));
+      const gs=el("div","games");
+      GAMES.filter(g=>g.round===ri&&g.region===rgi).forEach(g=>gs.append(gameCard(g)));
+      col.append(gs); grid.append(col);
+    });
+    v.append(grid);
+  } else {
+    const grid=el("div","finals");
+    GAMES.filter(g=>g.round===ri).forEach(g=>grid.append(gameCard(g)));
+    v.append(grid);
+    if(ri===5) v.append(championBox());
+  }
+  const nx=el("div","next");
+  if(ri>0){ const b=el("button","btn ghost","← "+ROUNDS[ri-1].name); b.onclick=()=>{tab=ri-1;render();window.scrollTo({top:0})}; nx.append(b) }
+  if(ri<5){ const b=el("button","btn primary",ROUNDS[ri+1].name+" →"); b.disabled=!roundDone(ri); b.onclick=()=>{tab=ri+1;render();window.scrollTo({top:0})}; nx.append(b) }
+  v.append(nx);
+}
+
+function championBox(){
+  const box=el("div","champ");
+  const c=picks.c;
+  if(!c){ box.append(el("div","eyebrow","Your champion"), el("div","who","To be decided"));
+    box.append(el("div","ff",`Make all ${TOTAL} picks to crown a winner.`)); return box }
+  box.append(el("div","eyebrow","Your Thanksgiving champion"), el("div","who",ITEM[c].name));
+  box.append(el("div","ff","Final Four: "+["e0","e1","e2","e3"].map(k=>ITEM[picks[k]].name).join(" · ")));
+  const row=el("div","next"); row.style.justifyContent="center";
+  const locked = submitted && same(submitted.picks,picks);
+  const nb=el("div","namebox");
+  const lab=el("label",null,"Your name"); lab.htmlFor="ttd-name";
+  const inp=el("input"); inp.id="ttd-name"; inp.maxLength=40; inp.placeholder="First name and last initial"; inp.value=myName;
+  inp.oninput=()=>{ myName=inp.value; lsSet("ttd-name",myName); sb.disabled = locked || !HAS_GAS || !myName.trim() };
+  nb.append(lab,inp); box.append(nb);
+  const sb=el("button","btn primary", locked? "Bracket locked in ✓" : submitted? "Update my locked bracket" : "Lock in my bracket");
+  sb.disabled = locked || !HAS_GAS || !myName.trim();
+  sb.onclick=submit;
+  const rs=el("button","btn ghost","Start over");
+  rs.onclick=()=>{ if(rs.dataset.armed){ picks={}; persist(); tab=0; saveMsg=""; render(); window.scrollTo({top:0}) } else { rs.dataset.armed="1"; rs.textContent="Tap again to clear all picks" } };
+  row.append(sb,rs); box.append(row);
+  if(!HAS_GAS){
+    box.append(el("div","notice","Open this bracket from its published web app link to lock it in. Your picks are still saved in this browser."));
+  } else if(saveMsg){ box.append(el("div","notice"+(saveMsg.ok?" ok":""),saveMsg.text)) }
+  return box;
+}
+
+function submit(){
+  if(!HAS_GAS||count()<TOTAL||!myName.trim()) return;
+  const body={id:myId, name:myName.trim(), picks:{...picks}, champion:picks.c,
+    finalFour:["e0","e1","e2","e3"].map(k=>picks[k]),
+    championName:ITEM[picks.c].name, finalFourNames:["e0","e1","e2","e3"].map(k=>ITEM[picks[k]].name)};
+  saveMsg={text:"Saving…"}; render();
+  google.script.run
+    .withSuccessHandler(list=>{
+      submitted={picks:{...picks}}; lsSet("ttd-submitted",JSON.stringify(submitted));
+      if(Array.isArray(list)) community=list;
+      saveMsg={ok:true,text:"Locked in. Check Community Results to see how your picks stack up."};
+      render();
+    })
+    .withFailureHandler(()=>{
+      saveMsg={text:"Couldn't save your bracket. Check your connection and try again."};
+      render();
+    })
+    .submitBracket(body);
+}
+
+function rowsPanel(title,hint,list,max,fmt,color){
+  const p=el("section","panel"); p.append(el("h3",null,title), el("p","hint",hint));
+  const rows=el("div","rows");
+  if(!list.length) rows.append(el("div","empty","No brackets locked in yet."));
+  list.forEach(([id,val],i)=>{
+    const r=el("div","row");
+    r.append(el("span","rk",String(i+1)), el("span","nm",ITEM[id].name), el("span","v",fmt(val)));
+    const m=el("div","meter"); const bar=el("i"); bar.style.width=(max?Math.max(4,val/max*100):0)+"%";
+    bar.style.setProperty("--c", color || REGIONS[ITEM[id].region].color); m.append(bar); r.append(m);
+    rows.append(r);
+  });
+  p.append(rows); return p;
+}
+
+function renderResults(){
+  const v=document.getElementById("view"); v.textContent="";
+  const head=el("div","roundhead");
+  head.append(el("h2",null,"Community Results"), el("p",null,"Live totals from every locked-in bracket. Each dish's score is the number of matchups it won across all brackets."));
+  v.append(head);
+  if(!HAS_GAS){ v.append(el("div","notice","Community results appear when this bracket is opened from its published web app link.")); return }
+  if(dbState==="loading"){ v.append(el("div","notice","Loading results…")); return }
+  if(dbState==="error"){ v.append(el("div","notice","Couldn't load results right now. They'll refresh in a moment.")) }
+  const B=community.filter(b=>b.picks&&b.champion&&ITEM[b.champion]);
+  const n=B.length;
+  const champ={}, ff={}, wins={};
+  B.forEach(b=>{
+    champ[b.champion]=(champ[b.champion]||0)+1;
+    (b.finalFour||[]).forEach(id=>{ if(ITEM[id]) ff[id]=(ff[id]||0)+1 });
+    Object.values(b.picks).forEach(id=>{ if(ITEM[id]) wins[id]=(wins[id]||0)+1 });
+  });
+  const sort=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]||ITEM[a[0]].name.localeCompare(ITEM[b[0]].name));
+  const stats=el("div","stats");
+  const sum=el("section","panel");
+  sum.append(el("h3",null,"Brackets in"), el("div","big",String(n)));
+  const top=sort(wins)[0];
+  sum.append(el("p","hint", n? `Fan favorite so far: ${ITEM[top[0]].name}, averaging ${(top[1]/n).toFixed(1)} wins per bracket.` : "Be the first to lock in a bracket."));
+  stats.append(sum);
+  stats.append(rowsPanel("Champion picks","Who people crowned the best Thanksgiving dish.",sort(champ).slice(0,8),n,v=>`${v} · ${Math.round(v/n*100)}%`,"var(--gold)"));
+  stats.append(rowsPanel("Final Four appearances","Share of brackets that sent each dish to the Final Four.",sort(ff).slice(0,10),n,v=>`${Math.round(v/n*100)}%`));
+  stats.append(rowsPanel("Power rankings","Total matchups won across all brackets (max 6 per bracket).",sort(wins).slice(0,15),(top?top[1]:0),v=>String(v)));
+  v.append(stats);
+  // Head-to-head for play-in games
+  const h2h=el("section","panel"); h2h.style.marginTop="22px";
+  h2h.append(el("h3",null,"Look-alike showdowns"), el("p","hint","How the community split on the play-in matchups."));
+  const rows=el("div","rows");
+  GAMES.filter(g=>g.round===0).forEach(g=>{
+    const a=g.a.item,b=g.b.item; let ca=0,cb=0;
+    B.forEach(x=>{ if(x.picks[g.id]===a)ca++; else if(x.picks[g.id]===b)cb++ });
+    const tot=ca+cb, pa=tot?Math.round(ca/tot*100):50;
+    const r=el("div","row"); r.style.gridTemplateColumns="minmax(0,1fr) auto minmax(0,1fr)";
+    const l=el("span","nm",`${ITEM[a].name} ${tot?pa+"%":""}`); const rr=el("span","nm",`${tot?(100-pa)+"%":""} ${ITEM[b].name}`); rr.style.textAlign="right";
+    r.append(l, el("span","rk","vs"), rr);
+    const m=el("div","meter"); m.style.gridColumn="1 / span 3"; m.style.background="var(--gold)"; const bar=el("i"); bar.style.width=pa+"%"; bar.style.setProperty("--c","var(--accent)"); m.append(bar); r.append(m);
+    rows.append(r);
+  });
+  h2h.append(rows); v.append(h2h);
+}
+
+function render(){
+  const c=count();
+  document.getElementById("pcount").textContent=`${c} / ${TOTAL}`;
+  document.getElementById("pbar").style.width=(c/TOTAL*100)+"%";
+  renderTabs();
+  if(tab===6) renderResults(); else renderRound(tab);
+}
+
+render();
+
+// Community results (Google Apps Script backend)
+function fetchResults(){
+  if(!HAS_GAS) { dbState="none"; return }
+  google.script.run
+    .withSuccessHandler(list=>{ community=Array.isArray(list)?list:[]; dbState="ready"; render() })
+    .withFailureHandler(()=>{ if(dbState==="loading") dbState="error"; render() })
+    .getBrackets();
+}
+fetchResults();
+setInterval(()=>{ if(!document.hidden && tab===6) fetchResults() }, 20000);
+})();
+</script>
+</body></html>
